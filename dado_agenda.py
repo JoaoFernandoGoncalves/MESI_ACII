@@ -2,7 +2,7 @@
 Classe Pessoa define o tipo de dado que será manipulado na memória RAM e Cache
 """
 
-class Pessoa:
+class dado:
     def __init__(self, nome, telefone, endereco, aniversario):
         self.nome = nome
         self.telefone = telefone
