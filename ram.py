@@ -1,4 +1,5 @@
 import dado_agenda
+import random
 
 class mem_ram:
     #Define atributos da classe ram
@@ -12,10 +13,8 @@ class mem_ram:
     def dado_ram(self, pos):
         return self.dados[pos]
     
-
-memoria = mem_ram()
-p1 = dado_agenda.dado("AAAA", "93493284", "Rua tal", "123322")
-memoria.dados[10] = p1
-
-x = memoria.leitura_ram(10)
-x.informacoes()
+    #teste, deletar!
+    def preenche_ram(self): 
+        for x in range (self.tamanho):
+            self.dados[x] = random.randint(0, 10)
+    
