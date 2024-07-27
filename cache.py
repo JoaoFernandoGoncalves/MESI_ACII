@@ -74,14 +74,14 @@ class mem_cache:
         emCache2, pos_cache2 = cache2.blocoEmCache(posBloco)
         emCache3, pos_cache3 = cache3.blocoEmCache(posBloco)
 
+
         if emCache2 or emCache3:
             if self.linha[posLinha] == cache2.linha[pos_cache2]:
-                self.tag[posLinha][0] == "shared"
-                cache2.tag[pos_cache2][0] == "shared"
-
-            if self.linha[posLinha] == cache3.linha[0]:
-                self.tag[posLinha][0] == "shared"
-                cache3.tag[pos_cache3][0] == "shared"
+                self.tag[posLinha][0] = "shared"
+                cache2.tag[pos_cache2][0] = "shared"
+            elif self.linha[posLinha] == cache3.linha[pos_cache3]:
+                self.tag[posLinha][0] = "shared"
+                cache3.tag[pos_cache3][0] = "shared"
         else:
             self.tag[posLinha][0] = "exclusive"
 

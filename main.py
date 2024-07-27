@@ -12,6 +12,10 @@ p3 = cache.mem_cache()
 
 p1.leitura_cache(p2, p3, RAM, 0)
 
-p2.leitura_cache(p1, p3, RAM, 0)
-print(p2.linha, p2.tag)
 print(p1.linha, p1.tag)
+
+p2.leitura_cache(p1, p3, RAM, 0)
+
+print(p1.linha, p1.tag)
+print(p2.linha, p2.tag)
+
