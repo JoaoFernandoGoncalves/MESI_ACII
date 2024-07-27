@@ -8,13 +8,10 @@ RAM.mostra_ram()
 
 p1 = cache.mem_cache()
 p2 = cache.mem_cache()
-p2.preenche_cache()
+p3 = cache.mem_cache()
 
-print(p1.linha)
-print(p2.linha)
+p1.leitura_cache(p2, p3, RAM, 0)
 
-p1.mapeia_cache(RAM, 5)
-
-
-print(p1.linha)
-print(p2.mapeia_cache(RAM, 10))
+p2.leitura_cache(p1, p3, RAM, 0)
+print(p2.linha, p2.tag)
+print(p1.linha, p1.tag)
