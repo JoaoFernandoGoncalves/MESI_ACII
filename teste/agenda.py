@@ -176,4 +176,56 @@ class AgendaApp(tk.Tk):
         processor.cache.clear_cache()
         # Update cache only for relevant items
         for idx, entry in enumerate(self.ram.data):
-           processor.write(idx, entry)
+            processor.write(idx, entry)
+
+    def update_cache_display(self, event=None):
+        selected_processor_id = self.processor_var.get()
+        processor = self.processors[selected_processor_id]
+
+        if hasattr(self, 'cache_window'):
+            self.cache_window.destroy()
+
+        self.cache_window = tk.Toplevel(self)
+        self.cache_window.title(f"Cache for Processor {selected_processor_id}")
+
+        cache_text = tk.Text(self.cache_window, height=10, width=80, wrap='none')
+        cache_text.pack()
+
+        cache_status = processor.cache.print_cache()
+        cache_text.insert(tk.END, cache_status)
+
+    def show_status(self):
+        self.status_window = tk.Toplevel(self)
+        self.status_window.title("Simulation Status")
+
+        tk.Label(self.status_window, text="RAM Status:").pack()
+        ram_status_text = tk.Text(self.status_window, height=10, width=80, wrap='none')
+        ram_status_text.pack()
+
+        tk.Label(self.status_window, text="Cache Status:").pack()
+        cache_status_text = tk.Text(self.status_window, height=10, width=80, wrap='none')
+        cache_status_text.pack()
+
+        ram_status = "\n".join(f"ID: {idx}, Name: {entry['name']}, Phone: {entry['phone']}, Address: {entry['address']}" for idx, entry in enumerate(self.ram.data))
+        cache_status = "\n".join(f"Processor {proc.id} Cache:\n{proc.cache.print_cache()}" for proc in self.processors)
+
+        ram_status_text.insert(tk.END, ram_status)
+        cache_status_text.insert(tk.END, cache_status)
+
+    def show_log(self):
+        self.log_window = tk.Toplevel(self)
+        self.log_window.title("Log")
+
+        log_tree = ttk.Treeview(self.log_window, columns=("Time", "Processor", "Operation", "Details"), show='headings')
+        log_tree.heading("Time", text="Time")
+        log_tree.heading("Processor", text="Processor")
+        log_tree.heading("Operation", text="Operation")
+        log_tree.heading("Details", text="Details")
+        log_tree.pack(fill=tk.BOTH, expand=True)
+
+        for entry in self.log.get_entries():
+            log_tree.insert("", tk.END, values=entry)
+
+if __name__ == "__main__":
+    app = AgendaApp()
+    app.mainloop()

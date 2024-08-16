@@ -1,6 +1,19 @@
+import random
+from faker import Faker
+
+fake = Faker('pt_BR')
+
 class RAM:
     def __init__(self, size):
-        self.data = {i: {"name": f"Name{i}", "phone": f"123-456-78{i}"} for i in range(size)}
+        self.size = size
+        self.data = [self.generate_fake_data() for _ in range(size)]
+
+    def generate_fake_data(self):
+        name = fake.name()
+        phone = fake.phone_number()
+        address = fake.address()
+        return {"name": name, "phone": phone, "address": address}
 
     def print_ram(self):
-        return "\n".join(f"Address: {address}, Data: {content}" for address, content in self.data.items())
+        return "\n".join(f"Address {i}: Name: {entry['name']}, Phone: {entry['phone']}, Address: {entry['address']}"
+                         for i, entry in enumerate(self.data))

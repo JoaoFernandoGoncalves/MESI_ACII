@@ -1,33 +1,43 @@
 import random
-from collections import deque
-
 class CacheLine:
-    def __init__(self, tag=None, state='I', data=None):
+    def __init__(self, tag=None, data=None, state='I'):
         self.tag = tag
-        self.state = state
         self.data = data
+        self.state = state
 
 class Cache:
-    def __init__(self, size=5, ram=None):
+    def __init__(self, ram, size=5):
         self.size = size
-        self.lines = {}
-        self.queue = deque()
         self.ram = ram
+        self.cache = [CacheLine() for _ in range(size)]
+        self.order = []  # To track the order for FIFO
 
     def find_line(self, tag):
-        return self.lines.get(tag, None)
+        for line in self.cache:
+            if line.tag == tag:
+                return line
+        return None
 
     def replace_line(self, tag, data):
-        if len(self.queue) == self.size:
-            old_tag = self.queue.popleft()
-            old_line = self.lines.pop(old_tag, None)
-            if old_line and old_line.state == 'M':
-                print(f"Writing back modified data to RAM at address {old_tag}")
-                self.ram[old_tag] = old_line.data
-        line = CacheLine(tag=tag, state='M', data=data)
-        self.lines[tag] = line
-        self.queue.append(tag)
-        return line
+        if len(self.order) >= self.size:
+            oldest_tag = self.order.pop(0)
+            # Invalidate the oldest line
+            self.cache[self.order.index(oldest_tag)].state = 'I'
+
+        index = len(self.order) % self.size
+        self.cache[index] = CacheLine(tag=tag, data=data, state='E')
+        self.order.append(tag)
+        return self.cache[index]
+
+    def clear_cache(self):
+        for line in self.cache:
+            line.tag = None
+            line.data = None
+            line.state = 'I'
+        self.order.clear()
 
     def print_cache(self):
-        return "\n".join(f"Tag: {tag}, State: {line.state}, Data: {line.data}" for tag, line in self.lines.items())
+        cache_status = "Cache State:\n"
+        for idx, line in enumerate(self.cache):
+            cache_status += f"Line {idx}: Tag: {line.tag}, Data: {line.data}, State: {line.state}\n"
+        return cache_status
