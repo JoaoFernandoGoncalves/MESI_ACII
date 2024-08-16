@@ -92,7 +92,7 @@ class AgendaApp(tk.Tk):
 
         # Processor selection
         self.processor_var = tk.IntVar(value=0)
-        self.processor_select = ttk.Combobox(self, textvariable=self.processor_var, values=[f"Processor {i}" for i in range(3)], state="readonly")
+        self.processor_select = ttk.Combobox(self, textvariable=self.processor_var, values=[i for i in range(3)], state="readonly")
         self.processor_select.pack(side=tk.LEFT)
 
         # Bind processor selection change
@@ -153,30 +153,39 @@ class AgendaApp(tk.Tk):
 
         tk.Button(contact_window, text=f"{mode}", command=lambda: self.save_contact(mode, item_id, contact_window)).grid(row=3, column=1)
 
-    def save_contact(self, mode, item_id=None, contact_window=None):
+    def save_contact(self, mode, item_id, contact_window):
+        # Extract contact details from the form
         name = self.name_entry.get()
         phone = self.phone_entry.get()
         address = self.address_entry.get()
-
+    
         if mode == "Add":
-            self.ram.data.append({"name": name, "phone": phone, "address": address})
-            self.tree.insert("", tk.END, iid=len(self.ram.data)-1, values=(len(self.ram.data)-1, name, phone, address))
-        elif mode == "Edit":
-            self.ram.data[int(item_id)] = {"name": name, "phone": phone, "address": address}
-            self.tree.item(item_id, values=(item_id, name, phone, address))
-        
-        self.update_cache()
-        if contact_window:
-            contact_window.destroy()
+            # Generate a new contact_id for the new contact
+            contact_id = len(self.ram.data)
+            self.ram.data.append({'name': name, 'phone': phone, 'address': address})
+        else:
+            # Ensure item_id is treated as an integer
+            contact_id = int(item_id)
+            self.ram.data[contact_id] = {'name': name, 'phone': phone, 'address': address}
+    
+        # Update the cache for the specific contact_id
+        self.update_cache(contact_id)
+    
+        self.load_ram_to_tree()
+        # Close the contact window
+        contact_window.destroy()
 
-    def update_cache(self):
+    def update_cache(self, contact_id):
         selected_processor_id = self.processor_var.get()
         processor = self.processors[selected_processor_id]
-        # Clear cache before updating
-        processor.cache.clear_cache()
-        # Update cache only for relevant items
-        for idx, entry in enumerate(self.ram.data):
-            processor.write(idx, entry)
+
+        # Check if the specific contact is already in the cache
+        line = processor.cache.find_line(contact_id)
+    
+        if line is None:
+           # If the contact is not in the cache, write it to the cache
+            entry = self.ram.data[contact_id]
+            processor.write(contact_id, entry)
 
     def update_cache_display(self, event=None):
         selected_processor_id = self.processor_var.get()
@@ -198,19 +207,32 @@ class AgendaApp(tk.Tk):
         self.status_window = tk.Toplevel(self)
         self.status_window.title("Simulation Status")
 
+        # RAM Status Table
         tk.Label(self.status_window, text="RAM Status:").pack()
-        ram_status_text = tk.Text(self.status_window, height=10, width=80, wrap='none')
-        ram_status_text.pack()
 
+        ram_tree = ttk.Treeview(self.status_window, columns=("ID", "Name", "Phone", "Address"), show='headings')
+        ram_tree.heading("ID", text="ID")
+        ram_tree.heading("Name", text="Name")
+        ram_tree.heading("Phone", text="Phone")
+        ram_tree.heading("Address", text="Address")
+        ram_tree.pack(fill=tk.BOTH, expand=True)
+
+        for idx, entry in enumerate(self.ram.data):
+            ram_tree.insert("", tk.END, values=(idx, entry['name'], entry['phone'], entry['address']))
+
+        # Cache Status Table
         tk.Label(self.status_window, text="Cache Status:").pack()
-        cache_status_text = tk.Text(self.status_window, height=10, width=80, wrap='none')
-        cache_status_text.pack()
 
-        ram_status = "\n".join(f"ID: {idx}, Name: {entry['name']}, Phone: {entry['phone']}, Address: {entry['address']}" for idx, entry in enumerate(self.ram.data))
-        cache_status = "\n".join(f"Processor {proc.id} Cache:\n{proc.cache.print_cache()}" for proc in self.processors)
+        cache_tree = ttk.Treeview(self.status_window, columns=("Processor", "Tag", "Data", "State"), show='headings')
+        cache_tree.heading("Processor", text="Processor")
+        cache_tree.heading("Tag", text="Tag")
+        cache_tree.heading("Data", text="Data")
+        cache_tree.heading("State", text="State")
+        cache_tree.pack(fill=tk.BOTH, expand=True)
 
-        ram_status_text.insert(tk.END, ram_status)
-        cache_status_text.insert(tk.END, cache_status)
+        for proc in self.processors:
+            for line in proc.cache.cache:
+                cache_tree.insert("", tk.END, values=(proc.id, line.tag, line.data, line.state))
 
     def show_log(self):
         self.log_window = tk.Toplevel(self)

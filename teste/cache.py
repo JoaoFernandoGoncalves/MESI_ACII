@@ -21,8 +21,11 @@ class Cache:
     def replace_line(self, tag, data):
         if len(self.order) >= self.size:
             oldest_tag = self.order.pop(0)
-            # Invalidate the oldest line
-            self.cache[self.order.index(oldest_tag)].state = 'I'
+            # Ensure that the line with oldest_tag is invalidated
+            for line in self.cache:
+                if line.tag == oldest_tag:
+                    line.state = 'I'
+                    break
 
         index = len(self.order) % self.size
         self.cache[index] = CacheLine(tag=tag, data=data, state='E')
