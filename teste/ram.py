@@ -15,5 +15,5 @@ class RAM:
         return {"name": name, "phone": phone, "address": address}
 
     def print_ram(self):
-        return "\n".join(f"Address {i}: Name: {entry['name']}, Phone: {entry['phone']}, Address: {entry['address']}"
+        return "\n".join(f"Address {i}: Name: {entry['name']}, Phone: {entry['phone']}"
                          for i, entry in enumerate(self.data))

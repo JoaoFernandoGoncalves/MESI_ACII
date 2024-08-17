@@ -21,14 +21,14 @@ class Processor:
                 data = self.ram.data[address]
                 line.state = 'S'
                 line.data = data
-                message = f"Processor {self.id}: Read Miss - Data fetched from RAM. New State: {line.state}\nData: {data}"
+                message = f"Processor {self.id}: Read Miss - Data fetched from RAM. New State: {line.state} Data: {data}"
             else:
                 message = f"Processor {self.id}: Read Hit - Data: {line.data}. State: {line.state}"
         else:
             data = self.ram.data[address]
             line = self.cache.replace_line(tag, data)
             line.state = 'S'
-            message = f"Processor {self.id}: Read Miss - Data fetched from RAM. New State: {line.state}\nData: {data}"
+            message = f"Processor {self.id}: Read Miss - Data fetched from RAM. New State: {line.state} Data: {data}"
         
         self.log.add_entry(message)
         return message
@@ -40,15 +40,15 @@ class Processor:
             if line.state in ['S', 'E', 'M']:
                 line.state = 'M'
                 line.data = data
-                message = f"Processor {self.id}: Write Hit - Data updated in cache. New State: {line.state}\nData: {data}"
+                message = f"Processor {self.id}: Write Hit - Data updated in cache. New State: {line.state} Data: {data}"
             else:
                 line.state = 'M'
                 line.data = data
-                message = f"Processor {self.id}: Write Miss - Data updated in cache. New State: {line.state}\nData: {data}"
+                message = f"Processor {self.id}: Write Miss - Data updated in cache. New State: {line.state} Data: {data}"
         else:
             line = self.cache.replace_line(tag, data)
             line.state = 'M'
-            message = f"Processor {self.id}: Write Miss - Data added to cache. New State: {line.state}\nData: {data}"
+            message = f"Processor {self.id}: Write Miss - Data added to cache. New State: {line.state} Data: {data}"
         
         self.log.add_entry(message)
         return message
@@ -83,6 +83,9 @@ class AgendaApp(tk.Tk):
 
         self.delete_button = tk.Button(self, text="Delete Contact", command=self.delete_contact)
         self.delete_button.pack(side=tk.LEFT)
+        
+        self.details_button = tk.Button(self, text="Details", command=self.show_details)
+        self.details_button.pack(side=tk.LEFT)
 
         self.show_status_button = tk.Button(self, text="Show Status", command=self.show_status)
         self.show_status_button.pack(side=tk.LEFT)
@@ -128,6 +131,38 @@ class AgendaApp(tk.Tk):
             self.update_cache()
         else:
             messagebox.showwarning("Delete Contact", "Invalid contact ID.")
+
+    def show_details(self):
+        selected_item = self.tree.selection()
+        if not selected_item:
+            messagebox.showwarning("Details", "Select a contact to view details.")
+            return
+        item_id = int(selected_item[0])
+        
+        selected_processor_id = self.processor_var.get()
+        processor = self.processors[selected_processor_id]
+
+        # Perform a read operation to get the data from the cache
+        cache_message = processor.read(item_id)
+        
+        # Open details window
+        details_window = tk.Toplevel(self)
+        details_window.title("Contact Details")
+
+        contact = self.ram.data[item_id]
+        
+        details_text = tk.Text(details_window, height=10, width=50)
+        details_text.pack()
+
+        details_info = (
+            f"ID: {item_id}\n"
+            f"Name: {contact['name']}\n"
+            f"Phone: {contact['phone']}\n"
+            f"Address: {contact['address']}\n\n"
+            f"Cache Status:\n{cache_message}\n"
+        )
+
+        details_text.insert(tk.END, details_info)
 
     def _open_contact_window(self, mode, item_id=None):
         contact_window = tk.Toplevel(self)
@@ -238,11 +273,8 @@ class AgendaApp(tk.Tk):
         self.log_window = tk.Toplevel(self)
         self.log_window.title("Log")
 
-        log_tree = ttk.Treeview(self.log_window, columns=("Time", "Processor", "Operation", "Details"), show='headings')
-        log_tree.heading("Time", text="Time")
-        log_tree.heading("Processor", text="Processor")
-        log_tree.heading("Operation", text="Operation")
-        log_tree.heading("Details", text="Details")
+        log_tree = ttk.Treeview(self.log_window, columns=("Action"), show='headings')
+        log_tree.heading("Action", text="Action")
         log_tree.pack(fill=tk.BOTH, expand=True)
 
         for entry in self.log.get_entries():
