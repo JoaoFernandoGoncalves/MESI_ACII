@@ -36,22 +36,36 @@ class Processor:
     def write(self, address, data):
         tag = address
         line = self.cache.find_line(tag)
+
         if line:
-            if line.state in ['S', 'E', 'M']:
+            if line.state == 'S':
+                # Shared -> Modified
                 line.state = 'M'
                 line.data = data
-                message = f"Processor {self.id}: Write Hit - Data updated in cache. New State: {line.state} Data: {data}"
-            else:
+                message = f"Processor {self.id}: Write Hit - Shared to Modified. New State: {line.state} Data: {data}"
+            elif line.state == 'E':
+                # Exclusive -> Modified
                 line.state = 'M'
                 line.data = data
-                message = f"Processor {self.id}: Write Miss - Data updated in cache. New State: {line.state} Data: {data}"
+                message = f"Processor {self.id}: Write Hit - Exclusive to Modified. New State: {line.state} Data: {data}"
+            elif line.state == 'M':
+                # Modified -> Modified (No change in state)
+                line.data = data
+                message = f"Processor {self.id}: Write Hit - Data updated in Modified state. Data: {data}"
+            elif line.state == 'I':
+                # Invalid state should be treated as a Write Miss
+                line.state = 'M'
+                line.data = data
+                message = f"Processor {self.id}: Write Miss - Invalid state updated to Modified. Data: {data}"
         else:
+            # Line not found in cache, so this is a Write Miss
             line = self.cache.replace_line(tag, data)
             line.state = 'M'
             message = f"Processor {self.id}: Write Miss - Data added to cache. New State: {line.state} Data: {data}"
-        
+
         self.log.add_entry(message)
         return message
+
 
 class AgendaApp(tk.Tk):
     def __init__(self):
@@ -217,10 +231,9 @@ class AgendaApp(tk.Tk):
         # Check if the specific contact is already in the cache
         line = processor.cache.find_line(contact_id)
     
-        if line is None:
-           # If the contact is not in the cache, write it to the cache
-            entry = self.ram.data[contact_id]
-            processor.write(contact_id, entry)
+        # If the contact is not in the cache, write it to the cache
+        entry = self.ram.data[contact_id]
+        processor.write(contact_id, entry)
 
     def update_cache_display(self, event=None):
         selected_processor_id = self.processor_var.get()
