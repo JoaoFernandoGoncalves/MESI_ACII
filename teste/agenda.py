@@ -152,28 +152,29 @@ class AgendaApp(tk.Tk):
             messagebox.showwarning("Details", "Select a contact to view details.")
             return
         item_id = int(selected_item[0])
-        
+
         selected_processor_id = self.processor_var.get()
         processor = self.processors[selected_processor_id]
 
         # Perform a read operation to get the data from the cache
         cache_message = processor.read(item_id)
-        
-        # Open details window
+
+        # Open details window with a larger size
         details_window = tk.Toplevel(self)
         details_window.title("Contact Details")
+        details_window.geometry("600x400")  # Set the size of the window (width x height)
 
         contact = self.ram.data[item_id]
-        
-        details_text = tk.Text(details_window, height=10, width=50)
-        details_text.pack()
+
+        # Increase the size of the text widget
+        details_text = tk.Text(details_window, height=15, width=70)  # Adjusted height and width
+        details_text.pack(fill=tk.BOTH, expand=True)  # Fill the entire window
 
         details_info = (
             f"ID: {item_id}\n"
             f"Name: {contact['name']}\n"
             f"Phone: {contact['phone']}\n"
             f"Address: {contact['address']}\n\n"
-            f"Cache Status:\n{cache_message}\n"
         )
 
         details_text.insert(tk.END, details_info)
