@@ -20,17 +20,21 @@ class Cache:
 
     def replace_line(self, tag, data):
         if len(self.order) >= self.size:
+            # Encontra o índice da linha mais antiga
             oldest_tag = self.order.pop(0)
-            # Ensure that the line with oldest_tag is invalidated
-            for line in self.cache:
+            for idx, line in enumerate(self.cache):
                 if line.tag == oldest_tag:
-                    line.state = 'I'
-                    break
-
-        index = len(self.order) % self.size
-        self.cache[index] = CacheLine(tag=tag, data=data, state='E')
-        self.order.append(tag)
-        return self.cache[index]
+                    # Substitui a linha mais antiga
+                    self.cache[idx] = CacheLine(tag=tag, data=data, state='E')
+                    self.order.append(tag)
+                    return self.cache[idx]
+        else:
+            # Se ainda não atingiu a capacidade máxima, adicione a nova linha
+            for idx, line in enumerate(self.cache):
+                if line.tag is None:  # Encontra uma linha vazia
+                    self.cache[idx] = CacheLine(tag=tag, data=data, state='E')
+                    self.order.append(tag)
+                    return self.cache[idx]
 
     def clear_cache(self):
         for line in self.cache:
