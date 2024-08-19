@@ -10,7 +10,7 @@ class Cache:
         self.size = size
         self.ram = ram
         self.cache = [CacheLine() for _ in range(size)]
-        self.order = []  # To track the order for FIFO
+        self.order = []  # Para fazer o FIFO
 
     def find_line(self, tag):
         for line in self.cache:
@@ -19,7 +19,6 @@ class Cache:
         return None
 
     def writeback(self, tag):
-        """Writes back the data from a modified cache line to RAM."""
         for line in self.cache:
             if line.tag == tag and line.state == 'M':
                 address = tag

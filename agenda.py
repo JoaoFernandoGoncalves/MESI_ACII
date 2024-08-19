@@ -39,21 +39,21 @@ class Processor:
 
         if line:
             if line.state in ['S', 'E']:
-                # Update state to Modified and write to cache
+                # Atualizar o estado para Modificado e escrever no cache
                 line.state = 'M'
                 line.data = data
                 message = f"Processor {self.id}: Write Hit - {line.state} to Modified. Data updated."
             elif line.state == 'M':
-                # Already Modified, just update data
+                # Já Modificado, apenas atualizar dados
                 line.data = data
                 message = f"Processor {self.id}: Write Hit - Data updated in Modified state."
             elif line.state == 'I':
-                # Invalid state, need to load data first and then modify
+                # Estado Inválido, precisa carregar dados primeiro e depois modificar
                 line.state = 'M'
                 line.data = data
                 message = f"Processor {self.id}: Write Miss - Invalid state to Modified. Data updated."
         else:
-            # Write Miss, replace the line, don't write directly to RAM
+            # Escrita Falha, substituir a linha, não escrever diretamente na RAM
             line = self.cache.replace_line(tag, data, app)
             line.state = 'M'
             message = f"Processor {self.id}: Write Miss - Line replaced and updated in cache."
@@ -76,7 +76,7 @@ class AgendaApp(tk.Tk):
         self.create_widgets()
 
     def create_widgets(self):
-        # Treeview for contacts
+        # Treeview para contatos
         self.tree = ttk.Treeview(self, columns=("ID", "Name", "Phone", "Address"), show='headings')
         self.tree.heading("ID", text="ID")
         self.tree.heading("Name", text="Name")
@@ -84,7 +84,7 @@ class AgendaApp(tk.Tk):
         self.tree.heading("Address", text="Address")
         self.tree.pack(fill=tk.BOTH, expand=True)
 
-        # Buttons
+        # Botões
         self.add_button = tk.Button(self, text="Add Contact", command=self.add_contact)
         self.add_button.pack(side=tk.LEFT)
 
@@ -103,12 +103,12 @@ class AgendaApp(tk.Tk):
         self.show_log_button = tk.Button(self, text="Show Log", command=self.show_log)
         self.show_log_button.pack(side=tk.LEFT)
 
-        # Processor selection
+        # Seleção de processador
         self.processor_var = tk.IntVar(value=0)
         self.processor_select = ttk.Combobox(self, textvariable=self.processor_var, values=[i for i in range(3)], state="readonly")
         self.processor_select.pack(side=tk.LEFT)
 
-        # Bind processor selection change
+        # Associar mudança de seleção do processador
         self.processor_select.bind("<<ComboboxSelected>>", self.update_cache_display)
 
         self.interface.extend(self.ram.data)
@@ -119,7 +119,7 @@ class AgendaApp(tk.Tk):
         self.ram.data = updated_ram
 
     def load_ram_to_tree(self):
-        self.tree.delete(*self.tree.get_children())  # Clear existing entries
+        self.tree.delete(*self.tree.get_children())  # Limpar entradas existentes
         for idx, entry in enumerate(self.interface):
             self.tree.insert("", tk.END, iid=idx, values=(idx, entry['name'], entry['phone'], entry['address']))
 
@@ -158,19 +158,19 @@ class AgendaApp(tk.Tk):
         selected_processor_id = self.processor_var.get()
         processor = self.processors[selected_processor_id]
 
-        # Perform a read operation to get the data from the cache
+        # Realizar uma operação de leitura para obter os dados do cache
         cache_message = processor.read(item_id)
 
-        # Open details window with a larger size
+        # Abrir janela de detalhes com tamanho maior
         details_window = tk.Toplevel(self)
         details_window.title("Contact Details")
-        details_window.geometry("600x400")  # Set the size of the window (width x height)
+        details_window.geometry("600x400")  # Definir o tamanho da janela (largura x altura)
 
         contact = self.interface[item_id]
 
-        # Increase the size of the text widget
-        details_text = tk.Text(details_window, height=15, width=70)  # Adjusted height and width
-        details_text.pack(fill=tk.BOTH, expand=True)  # Fill the entire window
+        # Aumentar o tamanho do widget de texto
+        details_text = tk.Text(details_window, height=15, width=70)  # Ajustar altura e largura
+        details_text.pack(fill=tk.BOTH, expand=True)  # Preencher toda a janela
 
         details_info = (
             f"ID: {item_id}\n"
@@ -206,36 +206,36 @@ class AgendaApp(tk.Tk):
         tk.Button(contact_window, text=f"{mode}", command=lambda: self.save_contact(mode, item_id, contact_window)).grid(row=3, column=1)
 
     def save_contact(self, mode, item_id, contact_window):
-        # Extract contact details from the form
+        # Extrair detalhes do contato do formulário
         name = self.name_entry.get()
         phone = self.phone_entry.get()
         address = self.address_entry.get()
     
         if mode == "Add":
-            # Generate a new contact_id for the new contact
+            # Gerar um novo contact_id para o novo contato
             contact_id = len(self.interface)
             self.interface.append({'name': name, 'phone': phone, 'address': address})
         else:
-            # Ensure item_id is treated as an integer
+            # Garantir que item_id seja tratado como um inteiro
             contact_id = int(item_id)
             self.interface[contact_id] = {'name': name, 'phone': phone, 'address': address}
     
-        # Update the cache for the specific contact_id
+        # Atualizar o cache para o contact_id específico
         self.update_cache(contact_id)
     
         self.load_ram_to_tree()
     
-        # Close the contact window
+        # Fechar a janela de contato
         contact_window.destroy()
 
     def update_cache(self, contact_id):
         selected_processor_id = self.processor_var.get()
         processor = self.processors[selected_processor_id]
 
-        # Check if the specific contact is already in the cache
+        # Verificar se o contato específico já está no cache
         line = processor.cache.find_line(contact_id)
     
-        # If the contact is not in the cache, write it to the cache
+        # Se o contato não estiver no cache, escrevê-lo no cache
         entry = self.interface[contact_id]
         processor.write(contact_id, entry)
 
@@ -259,7 +259,7 @@ class AgendaApp(tk.Tk):
         self.status_window = tk.Toplevel(self)
         self.status_window.title("Simulation Status")
 
-        # RAM Status Table
+        # Tabela de Status da RAM
         tk.Label(self.status_window, text="RAM Status:").pack()
 
         ram_tree = ttk.Treeview(self.status_window, columns=("ID", "Name", "Phone", "Address"), show='headings')
@@ -272,7 +272,7 @@ class AgendaApp(tk.Tk):
         for idx, entry in enumerate(self.ram.data):
             ram_tree.insert("", tk.END, values=(idx, entry['name'], entry['phone'], entry['address']))
 
-        # Cache Status Table
+        # Tabela de Status do Cache
         tk.Label(self.status_window, text="Cache Status:").pack()
 
         cache_tree = ttk.Treeview(self.status_window, columns=("Processor", "Tag", "Data", "State"), show='headings')
