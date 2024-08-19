@@ -4,7 +4,7 @@ from ram import RAM
 from cache import Cache
 from log import Log
 
-RAM_SIZE = 50
+RAM_SIZE = 100
 
 class Processor:
     def __init__(self, id, ram, log):
@@ -26,7 +26,7 @@ class Processor:
                 message = f"Processor {self.id}: Read Hit - Data: {line.data}. State: {line.state}"
         else:
             data = self.ram.data[address]
-            line = self.cache.replace_line(tag, data)
+            line = self.cache.replace_line(tag, data, app)
             line.state = 'S'
             message = f"Processor {self.id}: Read Miss - Data fetched from RAM. New State: {line.state} Data: {data}"
         
@@ -38,30 +38,25 @@ class Processor:
         line = self.cache.find_line(tag)
 
         if line:
-            if line.state == 'S':
-                # Shared -> Modified
+            if line.state in ['S', 'E']:
+                # Update state to Modified and write to cache
                 line.state = 'M'
                 line.data = data
-                message = f"Processor {self.id}: Write Hit - Shared to Modified. New State: {line.state} Data: {data}"
-            elif line.state == 'E':
-                # Exclusive -> Modified
-                line.state = 'M'
-                line.data = data
-                message = f"Processor {self.id}: Write Hit - Exclusive to Modified. New State: {line.state} Data: {data}"
+                message = f"Processor {self.id}: Write Hit - {line.state} to Modified. Data updated."
             elif line.state == 'M':
-                # Modified -> Modified (No change in state)
+                # Already Modified, just update data
                 line.data = data
-                message = f"Processor {self.id}: Write Hit - Data updated in Modified state. Data: {data}"
+                message = f"Processor {self.id}: Write Hit - Data updated in Modified state."
             elif line.state == 'I':
-                # Invalid state should be treated as a Write Miss
+                # Invalid state, need to load data first and then modify
                 line.state = 'M'
                 line.data = data
-                message = f"Processor {self.id}: Write Miss - Invalid state updated to Modified. Data: {data}"
+                message = f"Processor {self.id}: Write Miss - Invalid state to Modified. Data updated."
         else:
-            # Line not found in cache, so this is a Write Miss
-            line = self.cache.replace_line(tag, data)
+            # Write Miss, replace the line, don't write directly to RAM
+            line = self.cache.replace_line(tag, data, app)
             line.state = 'M'
-            message = f"Processor {self.id}: Write Miss - Data added to cache. New State: {line.state} Data: {data}"
+            message = f"Processor {self.id}: Write Miss - Line replaced and updated in cache."
 
         self.log.add_entry(message)
         return message
@@ -74,6 +69,7 @@ class AgendaApp(tk.Tk):
         self.geometry("800x600")
 
         self.ram = RAM(RAM_SIZE)
+        self.interface = []
         self.log = Log()
         self.processors = [Processor(i, self.ram, self.log) for i in range(3)]
 
@@ -115,11 +111,16 @@ class AgendaApp(tk.Tk):
         # Bind processor selection change
         self.processor_select.bind("<<ComboboxSelected>>", self.update_cache_display)
 
+        self.interface.extend(self.ram.data)
+
         self.load_ram_to_tree()
+
+    def update_ram(self, updated_ram):
+        self.ram.data = updated_ram
 
     def load_ram_to_tree(self):
         self.tree.delete(*self.tree.get_children())  # Clear existing entries
-        for idx, entry in enumerate(self.ram.data):
+        for idx, entry in enumerate(self.interface):
             self.tree.insert("", tk.END, iid=idx, values=(idx, entry['name'], entry['phone'], entry['address']))
 
     def add_contact(self):
@@ -141,6 +142,7 @@ class AgendaApp(tk.Tk):
         item_id = selected_item[0]
         if 0 <= int(item_id) < len(self.ram.data):
             del self.ram.data[int(item_id)]
+            del self.interface[int(item_id)]
             self.load_ram_to_tree()
             self.update_cache()
         else:
@@ -164,7 +166,7 @@ class AgendaApp(tk.Tk):
         details_window.title("Contact Details")
         details_window.geometry("600x400")  # Set the size of the window (width x height)
 
-        contact = self.ram.data[item_id]
+        contact = self.interface[item_id]
 
         # Increase the size of the text widget
         details_text = tk.Text(details_window, height=15, width=70)  # Adjusted height and width
@@ -196,7 +198,7 @@ class AgendaApp(tk.Tk):
         self.address_entry.grid(row=2, column=1)
 
         if mode == "Edit":
-            contact = self.ram.data[int(item_id)]
+            contact = self.interface[int(item_id)]
             self.name_entry.insert(0, contact['name'])
             self.phone_entry.insert(0, contact['phone'])
             self.address_entry.insert(0, contact['address'])
@@ -211,17 +213,18 @@ class AgendaApp(tk.Tk):
     
         if mode == "Add":
             # Generate a new contact_id for the new contact
-            contact_id = len(self.ram.data)
-            self.ram.data.append({'name': name, 'phone': phone, 'address': address})
+            contact_id = len(self.interface)
+            self.interface.append({'name': name, 'phone': phone, 'address': address})
         else:
             # Ensure item_id is treated as an integer
             contact_id = int(item_id)
-            self.ram.data[contact_id] = {'name': name, 'phone': phone, 'address': address}
+            self.interface[contact_id] = {'name': name, 'phone': phone, 'address': address}
     
         # Update the cache for the specific contact_id
         self.update_cache(contact_id)
     
         self.load_ram_to_tree()
+    
         # Close the contact window
         contact_window.destroy()
 
@@ -233,7 +236,7 @@ class AgendaApp(tk.Tk):
         line = processor.cache.find_line(contact_id)
     
         # If the contact is not in the cache, write it to the cache
-        entry = self.ram.data[contact_id]
+        entry = self.interface[contact_id]
         processor.write(contact_id, entry)
 
     def update_cache_display(self, event=None):

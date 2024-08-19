@@ -18,20 +18,33 @@ class Cache:
                 return line
         return None
 
-    def replace_line(self, tag, data):
+    def writeback(self, tag):
+        """Writes back the data from a modified cache line to RAM."""
+        for line in self.cache:
+            if line.tag == tag and line.state == 'M':
+                address = tag
+                if(len(self.ram) == tag):
+                    self.ram.append(line.data)
+                else:
+                    self.ram[address] = line.data
+                
+                print(f"Writeback: Data {line.data} written back to RAM at address {address}")
+                break
+
+    def replace_line(self, tag, data, app):
         if len(self.order) >= self.size:
-            # Encontra o índice da linha mais antiga
             oldest_tag = self.order.pop(0)
             for idx, line in enumerate(self.cache):
                 if line.tag == oldest_tag:
-                    # Substitui a linha mais antiga
+                    if line.state == 'M':
+                        self.writeback(oldest_tag)
+                        app.update_ram(self.ram)
                     self.cache[idx] = CacheLine(tag=tag, data=data, state='E')
                     self.order.append(tag)
                     return self.cache[idx]
         else:
-            # Se ainda não atingiu a capacidade máxima, adicione a nova linha
             for idx, line in enumerate(self.cache):
-                if line.tag is None:  # Encontra uma linha vazia
+                if line.tag is None:
                     self.cache[idx] = CacheLine(tag=tag, data=data, state='E')
                     self.order.append(tag)
                     return self.cache[idx]

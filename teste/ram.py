@@ -6,7 +6,7 @@ fake = Faker('pt_BR')
 class RAM:
     def __init__(self, size):
         self.size = size
-        self.data = [self.generate_fake_data() for _ in range(size)]
+        self.data = [self.generate_fake_data() for _ in range(int(size/2))]
 
     def generate_fake_data(self):
         name = fake.name()
